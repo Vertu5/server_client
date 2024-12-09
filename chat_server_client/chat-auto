@@ -1,0 +1,53 @@
+#!/bin/bash
+
+if [ $# -lt 1 ]; then
+    echo "Usage: chat-auto pseudo [--bot] [--manuel]" >&2
+    exit 1
+fi
+
+PSEUDO="$1"
+shift
+
+ARGS=("$@")
+
+function demander_dest() {
+    echo -n "Entrez le destinataire: " >&2
+    read dest
+    echo "$dest"
+}
+
+destinataire=$(demander_dest)
+if [ -z "$destinataire" ]; then
+    echo "Aucun destinataire, fin."
+    exit 0
+fi
+
+# On utilise une boucle pour relancer la demande de destinataire si Ctrl+D sur input
+# On créé un FIFO temporaire
+tmpfifo=$(mktemp -u)
+mkfifo "$tmpfifo"
+
+(
+    # Processus fils qui lit sur stdin et préfixe avec le destinataire
+    while true; do
+        if ! IFS= read -r line; then
+            # Ctrl+D détecté, on redemande un destinataire
+            destinataire=$(demander_dest)
+            if [ -z "$destinataire" ]; then
+                echo "Aucun destinataire, fin." >&2
+                break
+            fi
+            continue
+        fi
+        echo "$destinataire $line"
+    done
+) > "$tmpfifo" &
+
+CHAT_PID=$!
+
+# Lancer chat en lisant depuis $tmpfifo
+./chat "$PSEUDO" "${ARGS[@]}" < "$tmpfifo"
+
+kill $CHAT_PID 2>/dev/null
+rm "$tmpfifo"
+
