@@ -1,3 +1,10 @@
+/**
+ * @file chat_mode.hpp 
+ * @brief Définition de la classe ChatMode
+ * 
+ * C'est la généralisation de la classe NormalMode
+ */
+
 #pragma once
 #include "chat.hpp"
 #include <string>

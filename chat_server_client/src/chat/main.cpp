@@ -16,35 +16,18 @@
 #include <cstring> // pour memset
 
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        std::cerr << "chat pseudo_utilisateur [--bot] [--manuel] [--joli]\n";
-        return MISSING_ARGS;
-    }
-
     ProgramOptions opts;
-    opts.user = argv[1];
-    if (!validatePseudo(opts.user)) {
-        std::cerr << "Pseudo invalide.\n";
-        return INVALID_CHARS;
-    }
+    // verifie les argument ainsi que les modes
+    opts = parseArgs(argc, argv);
 
-    for (int i = 2; i < argc; i++) {
-        std::string arg = argv[i];
-        if (arg == "--bot") {
-            opts.isBot = true;
-        } else if (arg == "--manuel") {
-            opts.isManual = true;
-        } else if (arg == "--joli") {
-            opts.isJoli = true;
-        }
-    }
-
+    // initialisation de ip à un ip local
     std::string ip = "127.0.0.1";
     const char* ip_env = std::getenv("IP_SERVEUR");
     if (ip_env) {
         ip = ip_env;
     }
 
+    // initialise le port
     int port = 1234;
     const char* port_env = std::getenv("PORT_SERVEUR");
     if (port_env) {
@@ -56,6 +39,7 @@ int main(int argc, char* argv[]) {
 
     setupSignalHandlers();
 
+    // création des sockets
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         std::cerr << "Erreur création socket\n";
@@ -64,6 +48,7 @@ int main(int argc, char* argv[]) {
 
     struct sockaddr_in serv_addr;
 
+    // initialisation de la structure `serv_addr` en mettant à zéro tous ses octets
     std::memset(&serv_addr,0,sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(port);
@@ -72,6 +57,7 @@ int main(int argc, char* argv[]) {
         return SYSTEM_ERROR;
     }
 
+    // connection au serveur
     if (connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
         std::cerr << "Impossible de se connecter au serveur.\n";
         return SYSTEM_ERROR;
@@ -87,6 +73,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    // création du mode approprié
     std::unique_ptr<ChatMode> mode;
     if (opts.isManual) {
         mode = std::make_unique<ManualMode>(opts);
@@ -99,6 +86,7 @@ int main(int argc, char* argv[]) {
     std::thread sender(&ChatMode::runSenderThread, mode.get(), sockfd);
     std::thread receiver(&ChatMode::runReceiverThread, mode.get(), sockfd);
 
+    // attente des threads sender et reveiver
     sender.join();
     receiver.join();
 

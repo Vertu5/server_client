@@ -1,9 +1,16 @@
+/**
+ * @file chat.hpp 
+ * @brief Définition des variables globales et des fonctions utilitaires
+ */
+
 #pragma once
 #include <string>
 #include <atomic>
 
+// constante
 const int MAX_PSEUDO_LENGTH = 30;
 
+// initialisation des codes d'erreurs
 enum ReturnCodes {
     SUCCESS = 0,
     MISSING_ARGS = 1,
@@ -16,6 +23,7 @@ enum ReturnCodes {
     STDIN_CLOSED = 9
 };
 
+// struct des mode utilisé
 struct ProgramOptions {
     std::string user;
     bool isBot = false;

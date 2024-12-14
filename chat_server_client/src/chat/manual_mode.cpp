@@ -23,6 +23,7 @@ ManualMode::ManualMode(const ProgramOptions& options) : NormalMode(options) {
 void ManualMode::runSenderThread(int sockfd) {
     std::string line;
     while (true) {
+        // gestion des signaux
         if (g_sigintReceived.load()) {
             displayPendingMessages();
             g_sigintReceived.store(false);

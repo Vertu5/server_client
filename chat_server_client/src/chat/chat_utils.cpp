@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <iostream>
 
 namespace Chat {
 
@@ -39,18 +40,18 @@ ProgramOptions parseArgs(int argc, char* argv[]) {
 
     ProgramOptions opts;
     opts.user = argv[1];
-    opts.dest = argv[2];
+    // opts.dest = argv[2];
 
     // Check pseudonyms length
-    if (opts.user.length() > MAX_PSEUDO_LENGTH || opts.dest.length() > MAX_PSEUDO_LENGTH) {
+    if (opts.user.length() > MAX_PSEUDO_LENGTH) { //|| opts.dest.length() > MAX_PSEUDO_LENGTH) {
         std::cerr << "Erreur : pseudo trop long (max " << MAX_PSEUDO_LENGTH << " caractères)" << std::endl;
         exit(PSEUDO_TOO_LONG); // Code 2
     }
 
     // Check for invalid characters and invalid pseudos
-    if (!validatePseudo(opts.user) || !validatePseudo(opts.dest)) {
-        exit(INVALID_CHARS); // Code 3
-    }
+    // if (!validatePseudo(opts.user) || !validatePseudo(opts.dest)) {
+    //     exit(INVALID_CHARS); // Code 3
+    // }
 
     // Process options --bot and --manuel
     for (int i = 3; i < argc; i++) {
@@ -85,37 +86,12 @@ void displayWelcome(const ProgramOptions& opts) {
         std::cout << "║      Chat démarré          ║" << std::endl;
         std::cout << "╠════════════════════════════╣" << std::endl;
         std::cout << "║ Utilisateur : " << std::left << std::setw(13) << opts.user << "║" << std::endl;
-        std::cout << "║ Destinataire : " << std::left << std::setw(12) << opts.dest << "║" << std::endl;
+        // std::cout << "║ Destinataire : " << std::left << std::setw(12) << opts.dest << "║" << std::endl;
         std::cout << "║ Mode : " << std::left << std::setw(20) << mode << "║" << std::endl;
         std::cout << "╠════════════════════════════╣" << std::endl;
         std::cout << "║ 'exit' pour quitter        ║" << std::endl;
         std::cout << "╚════════════════════════════╝" << std::endl << std::endl;
     }
-}
-
-void createPipes(const std::string& sendPipe, const std::string& receivePipe) {
-    umask(0);
-    
-    if (mkfifo(sendPipe.c_str(), 0666) == -1 && errno != EEXIST) {
-        std::cerr << "Erreur création pipe " << sendPipe << std::endl;
-        exit(PIPE_ERROR);
-    }
-    
-    if (mkfifo(receivePipe.c_str(), 0666) == -1 && errno != EEXIST) {
-        std::cerr << "Erreur création pipe " << receivePipe << std::endl;
-        unlink(sendPipe.c_str());
-        exit(PIPE_ERROR);
-    }
-}
-
-void cleanupPipes(const std::string& sendPipe, const std::string& receivePipe) {
-    unlink(sendPipe.c_str());
-    unlink(receivePipe.c_str());
-}
-
-bool isPipeValid(const std::string& pipePath) {
-    struct stat statbuf;
-    return (stat(pipePath.c_str(), &statbuf) == 0 && S_ISFIFO(statbuf.st_mode));
 }
 
 void notifyMessageReceived() {
